@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'aid',
 ]
+AUTH_USER_MODEL = 'aid.User'
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
