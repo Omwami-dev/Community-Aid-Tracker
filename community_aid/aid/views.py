@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from rest_framework import viewsets, permissions
+from rest_framework.exceptions import PermissionDenied
 from .models import Project, Donation, Beneficiary, Volunteer
 from .serializers import ProjectSerializer, DonationSerializer, BeneficiarySerializer, VolunteerSerializer
 
@@ -26,6 +27,18 @@ class BeneficiaryViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(approved=False)  # Always save as unapproved
+    
+    def perform_update(self, serializer):
+        # Only admins can update/edit beneficiaries
+        if not self.request.user.is_staff:
+            raise PermissionDenied("Only admins can update beneficiaries.")
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        # Only admins can delete beneficiaries
+        if not self.request.user.is_staff:
+            raise PermissionDenied("Only admins can delete beneficiaries.")
+        instance.delete()
 
 class VolunteerViewSet(viewsets.ModelViewSet):
     queryset = Volunteer.objects.all()
