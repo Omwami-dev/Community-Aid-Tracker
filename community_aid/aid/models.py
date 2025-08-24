@@ -38,6 +38,12 @@ class Beneficiary(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     name = models.CharField(max_length=200)
     contact_info = models.CharField(max_length=200)
+    approved = models.BooleanField(default=False)  # Admin approval required
+
+    def __str__(self):
+        return self.name
+    
+    
 
 class Volunteer(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
