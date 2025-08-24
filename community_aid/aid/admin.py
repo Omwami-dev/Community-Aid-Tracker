@@ -32,6 +32,12 @@ class DonationAdmin(admin.ModelAdmin):
 class BeneficiaryAdmin(admin.ModelAdmin):
     list_display = ("name", "project", "contact_info")
     search_fields = ("name", "project__title")
+    list_filter = ("approved",)  # Filter by approved/unapproved in admin panel
+    actions = ["approve_selected"]
+
+    def approve_selected(self, request, queryset):
+        queryset.update(approved=True)
+    approve_selected.short_description = "Approve selected beneficiaries"
 
 @admin.register(Volunteer)
 class VolunteerAdmin(admin.ModelAdmin):
