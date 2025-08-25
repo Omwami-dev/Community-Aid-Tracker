@@ -28,12 +28,12 @@ class DonationViewSet(viewsets.ModelViewSet):
     serializer_class = DonationSerializer
     permission_classes = [permissions.IsAuthenticated]  # Only authenticated users
 
-    def get_serializer(self, *args, **kwargs):
-        serializer_class = self.get_serializer_class()
-        # Hide amount for non-admins
-        if not self.request.user.is_staff:
-            kwargs['context'] = {'hide_amount': True}
-        return serializer_class(*args, **kwargs)
+    def get_serializer_context(self):
+        # Pass request to serializer so it can check if user is admin
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+
 
 
 class BeneficiaryViewSet(viewsets.ModelViewSet):
