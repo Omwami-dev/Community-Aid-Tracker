@@ -26,16 +26,30 @@ class ProjectViewSet(viewsets.ModelViewSet):
             return [permissions.IsAuthenticated()]
         return [permissions.IsAdminUser()]
 
+from rest_framework import viewsets, permissions
+from .models import Donation
+from .serializers import DonationSerializer
+
 class DonationViewSet(viewsets.ModelViewSet):
     queryset = Donation.objects.all()
     serializer_class = DonationSerializer
-    permission_classes = [permissions.IsAuthenticated]  # Only authenticated users
+
+    def get_permissions(self):
+        # Allow GET for all authenticated users
+        if self.request.method in ['GET', 'HEAD', 'OPTIONS']:
+            return [permissions.IsAuthenticated()]
+        # Only admin/staff for create/update/delete
+        return [permissions.IsAdminUser()]
 
     def get_serializer_context(self):
         # Pass request to serializer so it can check if user is admin
         context = super().get_serializer_context()
         context['request'] = self.request
+        # Add hide_amount flag for non-admins
+        if not self.request.user.is_staff:
+            context['hide_amount'] = True
         return context
+
 
 
 
