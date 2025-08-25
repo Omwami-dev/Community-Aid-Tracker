@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework import viewsets, permissions
 from rest_framework.exceptions import PermissionDenied
 from .models import Project, Donation, Beneficiary, Volunteer
-from .serializers import ProjectSerializer, DonationSerializer, BeneficiarySerializer, VolunteerSerializer
+from .serializers import ProjectSerializer, DonationSerializer, BeneficiarySerializer, VolunteerSerializer,  UserSerializer
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -20,8 +20,7 @@ class IsAdminOrReadOnly(permissions.BasePermission):
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
-    permission_classes = [permissions.IsAuthenticated]  # Only logged-in users can access
-
+    permission_classes = [IsAdminOrReadOnly]
 
 class DonationViewSet(viewsets.ModelViewSet):
     queryset = Donation.objects.all()
@@ -39,8 +38,8 @@ class DonationViewSet(viewsets.ModelViewSet):
 class BeneficiaryViewSet(viewsets.ModelViewSet):
     queryset = Beneficiary.objects.all()
     serializer_class = BeneficiarySerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]  # Public can view, only logged-in users can modify
-    
+    permission_classes = [IsAdminOrReadOnly]
+
     def get_queryset(self):
         if self.request.user.is_staff:
             return Beneficiary.objects.all()
@@ -64,5 +63,9 @@ class BeneficiaryViewSet(viewsets.ModelViewSet):
 class VolunteerViewSet(viewsets.ModelViewSet):
     queryset = Volunteer.objects.all()
     serializer_class = VolunteerSerializer
-    permission_classes = [permissions.IsAuthenticated]  # Only logged-in users can access
+    permission_classes = [IsAdminOrReadOnly]
 
+class UserViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAdminUser]  # Only admins can view users
