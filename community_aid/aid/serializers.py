@@ -10,11 +10,17 @@ class ProjectSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class DonationSerializer(serializers.ModelSerializer):
+    amount = serializers.SerializerMethodField()  # conditional field
+
     class Meta:
         model = Donation
         fields = '__all__'
-        read_only_fields = ['amount'] 
 
+    def get_amount(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_staff:
+            return obj.amount
+        return None  # hides amount for non-admins
 class BeneficiarySerializer(serializers.ModelSerializer):
     class Meta:
         model = Beneficiary
