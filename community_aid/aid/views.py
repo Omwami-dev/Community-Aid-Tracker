@@ -20,8 +20,8 @@ class IsAdminOrReadOnly(permissions.BasePermission):
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
-    permission_classes = [IsAdminOrReadOnly]
-
+    permission_classes = [permissions.IsAuthenticated] 
+    
 class DonationViewSet(viewsets.ModelViewSet):
     queryset = Donation.objects.all()
     serializer_class = DonationSerializer
