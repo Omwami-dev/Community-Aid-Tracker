@@ -3,6 +3,19 @@ from rest_framework import viewsets, permissions
 from rest_framework.exceptions import PermissionDenied
 from .models import Project, Donation, Beneficiary, Volunteer
 from .serializers import ProjectSerializer, DonationSerializer, BeneficiarySerializer, VolunteerSerializer
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+class IsAdminOrReadOnly(permissions.BasePermission):
+    """
+    Allow read-only to anyone, but only admins can modify.
+    """
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return request.user.is_staff
+
 
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
@@ -13,7 +26,15 @@ class ProjectViewSet(viewsets.ModelViewSet):
 class DonationViewSet(viewsets.ModelViewSet):
     queryset = Donation.objects.all()
     serializer_class = DonationSerializer
-    permission_classes = [permissions.IsAdminUser]  # Only admins can access donations
+    permission_classes = [permissions.IsAuthenticated]  # Only authenticated users
+
+    def get_serializer(self, *args, **kwargs):
+        serializer_class = self.get_serializer_class()
+        # Hide amount for non-admins
+        if not self.request.user.is_staff:
+            kwargs['context'] = {'hide_amount': True}
+        return serializer_class(*args, **kwargs)
+
 
 class BeneficiaryViewSet(viewsets.ModelViewSet):
     queryset = Beneficiary.objects.all()
