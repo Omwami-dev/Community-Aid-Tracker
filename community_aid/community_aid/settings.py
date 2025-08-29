@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'aid',
+    'drf_yasg',
 ]
 AUTH_USER_MODEL = 'aid.User'
 
