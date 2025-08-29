@@ -20,6 +20,12 @@ class User(AbstractUser):
         help_text="Specific permissions for this user.",
         verbose_name="user permissions",
     )
+
+    def __str__(self):
+        if self.first_name and self.last_name:
+            return f"{self.first_name} {self.last_name}"
+        return self.username
+    
 class Project(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
