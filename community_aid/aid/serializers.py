@@ -10,6 +10,14 @@ class ProjectSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class DonationSerializer(serializers.ModelSerializer):
+    donor = serializers.SlugRelatedField(
+        slug_field="username",  # use the username instead of ID
+        queryset=User.objects.all()  # allows searching donor by username
+    )
+    project = serializers.SlugRelatedField(
+        slug_field="title",      # now you can type project title
+        queryset=Project.objects.all()
+    )
     class Meta:
         model = Donation
         fields = '__all__'  # includes project, donor, amount, etc.
