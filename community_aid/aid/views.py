@@ -4,6 +4,8 @@ from rest_framework.exceptions import PermissionDenied
 from .models import Project, Donation, Beneficiary, Volunteer
 from .serializers import ProjectSerializer, DonationSerializer, BeneficiarySerializer, VolunteerSerializer,  UserSerializer
 from django.contrib.auth import get_user_model
+from .permissions import (IsProjectOwnerOrReadOnly,IsDonationOwnerOrAdmin,IsBeneficiaryOrAdmin,IsVolunteerOrAdmin
+)
 
 User = get_user_model()
 
@@ -20,19 +22,20 @@ class IsAdminOrReadOnly(permissions.BasePermission):
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
+    permission_classes = [IsProjectOwnerOrReadOnly]
+
 
     def get_permissions(self):
         if self.request.method in ['GET', 'HEAD', 'OPTIONS']:
             return [permissions.IsAuthenticated()]
         return [permissions.IsAdminUser()]
 
-from rest_framework import viewsets, permissions
-from .models import Donation
-from .serializers import DonationSerializer
 
 class DonationViewSet(viewsets.ModelViewSet):
     queryset = Donation.objects.all()
     serializer_class = DonationSerializer
+    permission_classes = [IsDonationOwnerOrAdmin]
+
 
     def get_permissions(self):
         # Allow GET for all authenticated users
@@ -56,7 +59,8 @@ class DonationViewSet(viewsets.ModelViewSet):
 class BeneficiaryViewSet(viewsets.ModelViewSet):
     queryset = Beneficiary.objects.all()
     serializer_class = BeneficiarySerializer
-    permission_classes = [IsAdminOrReadOnly]
+    permission_classes = [IsBeneficiaryOrAdmin]
+
 
     def get_queryset(self):
         if self.request.user.is_staff:
@@ -81,7 +85,7 @@ class BeneficiaryViewSet(viewsets.ModelViewSet):
 class VolunteerViewSet(viewsets.ModelViewSet):
     queryset = Volunteer.objects.all()
     serializer_class = VolunteerSerializer
-    permission_classes = [IsAdminOrReadOnly]
+    permission_classes = [IsVolunteerOrAdmin]
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = User.objects.all()
