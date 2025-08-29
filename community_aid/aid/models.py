@@ -34,6 +34,9 @@ class Project(models.Model):
     status = models.CharField(max_length=50)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE)
 
+    def __str__(self):
+        return self.title
+
 class Donation(models.Model):
     donor = models.ForeignKey(User, on_delete=models.CASCADE)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
