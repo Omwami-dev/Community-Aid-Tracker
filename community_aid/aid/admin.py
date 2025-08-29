@@ -14,6 +14,8 @@ class CustomUserAdmin(UserAdmin):
     add_fieldsets = UserAdmin.add_fieldsets + (
         ("Additional Info", {"fields": ("date_of_birth", "profile_photo")}),
     )
+    search_fields = ["username", "email"]
+
 
 # Register other models
 @admin.register(Project)
@@ -27,6 +29,7 @@ class DonationAdmin(admin.ModelAdmin):
     list_display = ("donor", "project", "amount", "date")
     search_fields = ("donor__username", "project__title")
     list_filter = ("date",)
+    autocomplete_fields = ["donor", "project"]
 
 @admin.register(Beneficiary)
 class BeneficiaryAdmin(admin.ModelAdmin):
