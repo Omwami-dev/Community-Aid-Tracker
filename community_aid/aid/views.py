@@ -1,13 +1,86 @@
+import requests
+from django.conf import settings
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 from django.shortcuts import render
 from rest_framework import viewsets, permissions
 from rest_framework.exceptions import PermissionDenied
 from .models import Project, Donation, Beneficiary, Volunteer
-from .serializers import ProjectSerializer, DonationSerializer, BeneficiarySerializer, VolunteerSerializer,  UserSerializer
+from .serializers import ProjectSerializer, DonationSerializer, BeneficiarySerializer, VolunteerSerializer, UserSerializer
 from django.contrib.auth import get_user_model
-from .permissions import (IsProjectOwnerOrReadOnly,IsDonationOwnerOrAdmin,IsBeneficiaryOrAdmin,IsVolunteerOrAdmin
+from .permissions import (
+    IsProjectOwnerOrReadOnly,
+    IsDonationOwnerOrAdmin,
+    IsBeneficiaryOrAdmin,
+    IsVolunteerOrAdmin,
 )
 
 User = get_user_model()
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def mpesa_donate(request):
+    """
+    Initiates an M-Pesa payment via Flutterwave for a specific project
+    """
+    amount = request.data.get("amount")
+    phone = request.data.get("phone")
+    project_id = request.data.get("projectId")
+
+    if not all([amount, phone, project_id]):
+        return Response({"error": "All fields are required"}, status=400)
+
+    # Get the project
+    try:
+        project = Project.objects.get(id=project_id)
+    except Project.DoesNotExist:
+        return Response({"error": "Project not found"}, status=404)
+
+    # Prepare payload for Flutterwave
+    payload = {
+        "tx_ref": f"donation_{request.user.id}_{project_id}",
+        "amount": amount,
+        "currency": "KES",
+        "payment_type": "mpesa",
+        "customer": {
+            "email": request.user.email,
+            "phonenumber": phone,
+            "name": request.user.username,
+        },
+        "customizations": {
+            "title": "Community Aid Donation",
+            "description": f"Donation to {project.title}",
+        },
+    }
+
+    headers = {
+        "Authorization": f"Bearer {settings.FLUTTERWAVE_SECRET_KEY}"
+    }
+
+    try:
+        # Call Flutterwave API
+        response = requests.post(
+            "https://api.flutterwave.com/v3/payments",
+            json=payload,
+            headers=headers,
+            timeout=30
+        )
+        response_data = response.json()
+    except requests.RequestException as e:
+        return Response({"error": "Payment request failed", "details": str(e)}, status=500)
+
+    # Save donation as pending in database
+    Donation.objects.create(
+        donor=request.user,
+        project=project,
+        amount=amount,
+        payment_method="mpesa",
+        status="pending"
+    )
+
+    return Response(response_data)
+
 
 class IsAdminOrReadOnly(permissions.BasePermission):
     """
