@@ -46,6 +46,13 @@ INSTALLED_APPS = [
 AUTH_USER_MODEL = 'aid.User'
 
 
+AUTHENTICATION_BACKENDS = [
+    "aid.auth_backends.EmailBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
+
+
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',

@@ -4,10 +4,11 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.shortcuts import render
+from rest_framework import generics, permissions
 from rest_framework import viewsets, permissions
 from rest_framework.exceptions import PermissionDenied
 from .models import Project, Donation, Beneficiary, Volunteer
-from .serializers import ProjectSerializer, DonationSerializer, BeneficiarySerializer, VolunteerSerializer, UserSerializer
+from .serializers import ProjectSerializer, UserSerializer, DonationSerializer, BeneficiarySerializer,VolunteerSerializer, UserSerializer
 from django.contrib.auth import get_user_model
 from .permissions import (
     IsProjectOwnerOrReadOnly,
@@ -177,3 +178,8 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAdminUser]  # Only admins can view users
+
+class RegisterView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [permissions.AllowAny]
