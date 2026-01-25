@@ -59,3 +59,17 @@ class Volunteer(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     role = models.CharField(max_length=100)
     date_joined = models.DateTimeField(auto_now_add=True)
+
+    STATUS_CHOICES = (
+        ("pending", "Pending"),
+        ("approved", "Approved"),
+        ("rejected", "Rejected"),
+    )
+    status = models.CharField(
+        max_length=10,
+        choices=STATUS_CHOICES,
+        default="pending"
+    )
+
+    def __str__(self):
+        return f"{self.user.username} - {self.project.title}"

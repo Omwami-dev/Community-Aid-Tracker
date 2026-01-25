@@ -160,6 +160,19 @@ class VolunteerViewSet(viewsets.ModelViewSet):
     serializer_class = VolunteerSerializer
     permission_classes = [IsVolunteerOrAdmin]
 
+    def get_queryset(self):
+        # Admin sees all volunteers
+        if self.request.user.is_staff:
+            return Volunteer.objects.all()
+        
+        # Everyone else sees only approved volunteers
+        return Volunteer.objects.filter(status="approved")
+
+    def perform_create(self, serializer):
+        # When a volunteer applies, status must be pending
+        serializer.save(status="pending")
+
+
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer

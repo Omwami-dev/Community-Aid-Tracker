@@ -33,6 +33,7 @@ class VolunteerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Volunteer
         fields = '__all__'
+        read_only_fields = ["status"]
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
