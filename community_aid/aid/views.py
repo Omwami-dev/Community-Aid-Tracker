@@ -1,7 +1,11 @@
 import requests
 from django.conf import settings
+from rest_framework.exceptions import ValidationError
+from .serializers import VolunteerSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
+from .serializers import EmailTokenObtainPairSerializer
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser,IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from django.shortcuts import render
 from rest_framework import generics, permissions
@@ -92,43 +96,56 @@ class IsAdminOrReadOnly(permissions.BasePermission):
             return True
         return request.user.is_staff
 
-
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
-    permission_classes = [IsProjectOwnerOrReadOnly]
-
 
     def get_permissions(self):
-        if self.request.method in ['GET', 'HEAD', 'OPTIONS']:
-            return [permissions.IsAuthenticated()]
+        # Anyone can VIEW projects
+        if self.action in ['list', 'retrieve']:
+            return [permissions.AllowAny()]
+
+        # Only admins can CREATE / UPDATE / DELETE
         return [permissions.IsAdminUser()]
 
 
 class DonationViewSet(viewsets.ModelViewSet):
     queryset = Donation.objects.all()
     serializer_class = DonationSerializer
-    permission_classes = [IsDonationOwnerOrAdmin]
+    permission_classes = [permissions.AllowAny]  # Anyone can submit
 
+    def get_queryset(self):
+        # Admin sees all donations
+        if self.request.user.is_staff:
+            return Donation.objects.all()
+        # Non-admins only see approved donations
+        return Donation.objects.filter(approved=True)
 
     def get_permissions(self):
-        # Allow GET for all authenticated users
+        # Allow POST for anyone
+        if self.request.method == 'POST':
+            return [permissions.AllowAny()]
+        # Allow GET for authenticated users
         if self.request.method in ['GET', 'HEAD', 'OPTIONS']:
             return [permissions.IsAuthenticated()]
-        # Only admin/staff for create/update/delete
+        # Only admin/staff can PUT/PATCH/DELETE
         return [permissions.IsAdminUser()]
 
     def get_serializer_context(self):
-        # Pass request to serializer so it can check if user is admin
+        # Pass request to serializer
         context = super().get_serializer_context()
         context['request'] = self.request
-        # Add hide_amount flag for non-admins
+        # Hide amount for non-admins
         if not self.request.user.is_staff:
             context['hide_amount'] = True
         return context
 
-
-
+    def perform_create(self, serializer):
+        # Optionally set donor if you have a logged-in user
+        if self.request.user.is_authenticated:
+            serializer.save(donor=self.request.user)
+        else:
+            serializer.save()
 
 class BeneficiaryViewSet(viewsets.ModelViewSet):
     queryset = Beneficiary.objects.all()
@@ -156,24 +173,49 @@ class BeneficiaryViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("Only admins can delete beneficiaries.")
         instance.delete()
 
+
 class VolunteerViewSet(viewsets.ModelViewSet):
-    queryset = Volunteer.objects.all()
+    """
+    Handles volunteer submissions:
+    - Anyone can GET approved volunteers and POST new volunteer applications.
+    - Admin users can approve/reject or update any volunteer.
+    """
     serializer_class = VolunteerSerializer
-    permission_classes = [IsVolunteerOrAdmin]
+
+    def get_permissions(self):
+        """
+        - Admin users can update, partial_update, or delete.
+        - Anyone else can list or create volunteer applications.
+        """
+        if self.action in ["update", "partial_update", "destroy"]:
+            permission_classes = [IsAdminUser]
+        else:
+            permission_classes = [AllowAny]
+        return [permission() for permission in permission_classes]
 
     def get_queryset(self):
-        # Admin sees all volunteers
-        if self.request.user.is_staff:
-            return Volunteer.objects.all()
-        
-        # Everyone else sees only approved volunteers
-        return Volunteer.objects.filter(status="approved")
+        """
+        - Admin sees all volunteers.
+        - Non-admins see only approved volunteers.
+        """
+        user = self.request.user
+        if user.is_staff:
+            return Volunteer.objects.all().order_by("-date_joined")
+        return Volunteer.objects.filter(status="approved").order_by("-date_joined")
 
     def perform_create(self, serializer):
-        # When a volunteer applies, status must be pending
-        serializer.save(status="pending")
+        """
+        Save volunteer application:
+        - If the user is logged in, attach them.
+        - Otherwise, allow anonymous submission.
+        - Status is always 'pending' on creation.
+        """
+        serializer.save(
+            user=self.request.user if self.request.user.is_authenticated else None,
+            status="pending"
+        )
 
-
+        
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -183,3 +225,6 @@ class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [permissions.AllowAny]
+
+class EmailTokenObtainPairView(TokenObtainPairView):
+    serializer_class = EmailTokenObtainPairSerializer

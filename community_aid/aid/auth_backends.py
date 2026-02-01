@@ -3,19 +3,18 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
-class EmailBackend(ModelBackend):
-    """
-    Authenticate using email instead of username.
-    """
-
+class EmailOnlyBackend(ModelBackend):
     def authenticate(self, request, username=None, password=None, **kwargs):
-        # Here username is actually email
+        email = kwargs.get("email") or username
+
         try:
-            user = User.objects.get(email=username)
+            user = User.objects.get(email=email)
         except User.DoesNotExist:
             return None
 
         if user.check_password(password):
             return user
         return None
+
+
 

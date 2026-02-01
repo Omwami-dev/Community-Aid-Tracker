@@ -19,9 +19,9 @@ class CustomUserAdmin(UserAdmin):
 # Register other models
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
-    list_display = ("title", "status", "start_date", "end_date", "created_by")
-    search_fields = ("title", "description", "status")
-    list_filter = ("status", "start_date", "end_date")
+    list_display = ['title', 'status', 'start_date', 'end_date', 'created_by']
+    search_fields = ['title', 'description']
+    list_filter = ['status', 'start_date', 'end_date']
 
 
 @admin.register(Donation)
@@ -34,7 +34,7 @@ class DonationAdmin(admin.ModelAdmin):
 
 @admin.register(Beneficiary)
 class BeneficiaryAdmin(admin.ModelAdmin):
-    list_display = ("name", "project", "contact_info")
+    list_display = ('name', 'project', 'contact', 'approved', 'date_created')
     search_fields = ("name", "project__title")
     list_filter = ("approved",)  # Filter by approved/unapproved in admin panel
     actions = ["approve_selected"]

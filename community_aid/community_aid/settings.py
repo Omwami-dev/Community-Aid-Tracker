@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-92-(g-(-y1=&-ojgca(t&9rq)8qglvf_nny#61!xa@-=$_l#0m'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 
@@ -47,9 +47,10 @@ AUTH_USER_MODEL = 'aid.User'
 
 
 AUTHENTICATION_BACKENDS = [
-    "aid.auth_backends.EmailBackend",
+    "aid.auth_backends.EmailOnlyBackend",
     "django.contrib.auth.backends.ModelBackend",
 ]
+
 
 
 
